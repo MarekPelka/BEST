@@ -20,6 +20,7 @@ And use it to break passwords:
 Todo:
 1. In **func reduction(h string) string** have to implement some sort of reduction function - currently it just a hash value - not very common password
 2. Do some performance benchmarks of breaking passwords - maybe CLUSTERED COLUMNSTORE?
+3. Dockerize hash.go
 
 Tools:
 To connect to DB manually first install Microsoft's ODBC driver with *scripts/installODCB.sh* and the run it with *scripts/sqlplus.sh*
