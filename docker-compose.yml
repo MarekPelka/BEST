@@ -12,9 +12,4 @@ services:
      - "./database:/workspace"
     command:
       - /workspace/database-entrypoint.sh
-  goapp:
-    build: ./goapp
-    volumes:
-      - ./goapp:/app # for live code updates
-    depends_on:
-      - database
+      

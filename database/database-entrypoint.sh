@@ -8,13 +8,13 @@
 /opt/mssql/bin/sqlservr &
 status=$?
 if [ $status -ne 0 ]; then
-  echo "Failed to start my_first_process: $status"
+  echo "Failed to start sqlservr: $status"
   exit $status
 fi
 
 sleep 12
-/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1\\SQLEXPRESS,1433 -U sa -P Microsoft2017 -Q "CREATE DATABASE SampleDB;"
-/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1\\SQLEXPRESS,1433 -U sa -P Microsoft2017 -d SampleDB -i /workspace/initial.sql
+/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1\\SQLEXPRESS,1433 -U sa -P Microsoft2017 -Q "CREATE DATABASE HashDB;"
+/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1\\SQLEXPRESS,1433 -U sa -P Microsoft2017 -d HashDB -i /workspace/initial.sql
 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1\\SQLEXPRESS,1433 -U sa -P Microsoft2017 -Q "SELECT name FROM master.dbo.sysdatabases"
 
 while sleep 60; do
