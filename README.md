@@ -3,8 +3,9 @@
 Usage
 -----
 First you need to start database, here we use docker-compose as glorified docker run:
+```
     docker-compose up
-
+```
 Next we can use the application to generate rainbowtable:
 ```
     cd app/
