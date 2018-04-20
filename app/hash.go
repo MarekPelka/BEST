@@ -130,7 +130,7 @@ func find(hash string) string {
 
 	var startWord string
 	numberOfIter := 0
-	for i := 0; i < width; i++ {
+	for numberOfIter < width {
 		r := selectFromTable(hash)
 
 		if r != "" {
@@ -227,7 +227,7 @@ func main() {
 
 		wg.Wait()
 
-	case findPassword:
+	case findPassword && len(os.Args) == 3:
 		openDBConnection()
 		fmt.Printf("Found password: %s\n", find(os.Args[2])) //"f82a7d02e8f0a728b7c3e958c278745cb224d3d7b2e3b84c0ecafc5511fdbdb7" --> sould return "password!"
 	default:
