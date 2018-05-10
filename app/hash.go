@@ -36,6 +36,8 @@ var (
 	findPassword     bool
 	passwordFilename = "darkweb2017-top10000.txt"
 	usage            = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
+
+	defaultPassLength = 8
 )
 
 type row struct {
@@ -48,8 +50,13 @@ func hashString(s string) string {
 	return hex.EncodeToString(h[:])
 }
 
-func reduction(h string) string {
-	//input_bytes := []byte(h)
+func reduction(h string, columnNumber int) string {
+	inputBytes := []byte(h)
+
+	for i := 0; i < defaultPassLength; i++ {
+		iHaveNotIdeaWhatIAmDoing := inputBytes[(i + columnNumber) % len(inputBytes)]
+		print(iHaveNotIdeaWhatIAmDoing)
+	}
 
 	return h
 }
@@ -141,7 +148,7 @@ func find(hash string) string {
 			startWord = r
 			break
 		}
-		hash = reduction(hash)
+		hash = reduction(hash, numberOfIter)
 		hash = hashString(hash)
 
 		numberOfIter++
@@ -149,7 +156,7 @@ func find(hash string) string {
 
 	for i := 0; i < width-numberOfIter-1; i++ {
 		startWord = hashString(startWord)
-		startWord = reduction(startWord)
+		startWord = reduction(startWord, i)
 	}
 	return startWord
 }
@@ -205,7 +212,7 @@ func generatePass() {
 			var subWord = w
 			for i := 0; i < width; i++ {
 				h = hashString(subWord)
-				subWord = reduction(h)
+				subWord = reduction(h, i)
 			}
 
 			rows <- row{w, h}
