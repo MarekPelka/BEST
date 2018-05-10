@@ -17,24 +17,26 @@ import (
 	"bufio"
 )
 
-var server = "0.0.0.0"
-var port = 1401
-var user = "sa"
-var password = "Microsoft2017"
-var database = "HashDB"
+var(
+ server = "0.0.0.0"
+ port = 1401
+ user = "sa"
+ password = "Microsoft2017"
+ database = "HashDB"
 
-var db *sql.DB
+ db *sql.DB
 
-var wg sync.WaitGroup
+ wg sync.WaitGroup
 
-var width = 1000
+ width = 1000
 
-var rows = make(chan row)
+ rows = make(chan row)
 
-var generate bool
-var findPassword bool
-var passwordFilename = "darkweb2017-top10000.txt"
-var usage = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
+ generate bool
+ findPassword bool
+ passwordFilename = "darkweb2017-top10000.txt"
+ usage = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
+)
 
 type row struct {
 	word string
@@ -47,6 +49,9 @@ func hashString(s string) string {
 }
 
 func reduction(h string) string {
+	//input_bytes := []byte(h)
+
+
 	return h
 }
 
@@ -189,12 +194,13 @@ func generatePass() {
 	defer file.Close()
 
 	numberOfLines, _ := lineCounter(file)
-	fmt.Printf("Numer of lines: %d\n", numberOfLines)
+	fmt.Printf("Numer of lines in provided pass dict file: %d\n", numberOfLines)
 	wg.Add(numberOfLines)
 
 	file.Seek(0, 0)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		// Run for single line
 		go func(w string) {
 			var h string
 			var subWord = w
@@ -235,7 +241,7 @@ func main() {
 		fmt.Printf("Found password: %s\n", find(os.Args[2])) //"f82a7d02e8f0a728b7c3e958c278745cb224d3d7b2e3b84c0ecafc5511fdbdb7" --> sould return "password!"
 	default:
 		flag.Usage()
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	t2 := time.Since(t1)
