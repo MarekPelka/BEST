@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "github.com/denisenkom/go-mssqldb"
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -15,6 +14,7 @@ import (
 	"sync"
 	"time"
 	"flag"
+	"bufio"
 )
 
 var server = "0.0.0.0"
@@ -178,6 +178,48 @@ func openFile() *os.File {
 	return file
 }
 
+func generatePass() {
+	if len(os.Args) == 3 {
+		passwordFilename = os.Args[2]
+	}
+	fmt.Printf("Using: %s\n", passwordFilename)
+	openDBConnection()
+	defer db.Close()
+	file := openFile()
+	defer file.Close()
+
+	numberOfLines, _ := lineCounter(file)
+	fmt.Printf("Numer of lines: %d\n", numberOfLines)
+	wg.Add(numberOfLines)
+
+	file.Seek(0, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		go func(w string) {
+			var h string
+			var subWord = w
+			for i := 0; i < width; i++ {
+				h = hashString(subWord)
+				subWord = reduction(h)
+			}
+
+			rows <- row{w, h}
+		}(scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		for i := range rows {
+			appendToTable(i)
+		}
+	}()
+
+	wg.Wait()
+}
+
 func main() {
 
 	flag.Parse()
@@ -187,46 +229,7 @@ func main() {
 
 	switch {
 	case generate:
-		if len(os.Args) == 3 {
-			passwordFilename = os.Args[2]
-		}
-		fmt.Printf("Using: %s\n", passwordFilename)
-		openDBConnection()
-		defer db.Close()
-		file := openFile()
-		defer file.Close()
-
-		numberOfLines, _ := lineCounter(file)
-		fmt.Printf("Numer of lines: %d\n", numberOfLines)
-		wg.Add(numberOfLines)
-
-		file.Seek(0, 0)
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			go func(w string) {
-				var h string
-				var subWord = w
-				for i := 0; i < width; i++ {
-					h = hashString(subWord)
-					subWord = reduction(h)
-				}
-
-				rows <- row{w, h}
-			}(scanner.Text())
-		}
-
-		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
-		}
-
-		go func() {
-			for i := range rows {
-				appendToTable(i)
-			}
-		}()
-
-		wg.Wait()
-
+		generatePass()
 	case findPassword && len(os.Args) == 3:
 		openDBConnection()
 		fmt.Printf("Found password: %s\n", find(os.Args[2])) //"f82a7d02e8f0a728b7c3e958c278745cb224d3d7b2e3b84c0ecafc5511fdbdb7" --> sould return "password!"
