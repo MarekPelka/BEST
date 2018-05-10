@@ -17,25 +17,25 @@ import (
 	"bufio"
 )
 
-var(
- server = "0.0.0.0"
- port = 1401
- user = "sa"
- password = "Microsoft2017"
- database = "HashDB"
+var (
+	server   = "0.0.0.0"
+	port     = 1401
+	user     = "sa"
+	password = "Microsoft2017"
+	database = "HashDB"
 
- db *sql.DB
+	db *sql.DB
 
- wg sync.WaitGroup
+	wg sync.WaitGroup
 
- width = 1000
+	width = 1000
 
- rows = make(chan row)
+	rows = make(chan row)
 
- generate bool
- findPassword bool
- passwordFilename = "darkweb2017-top10000.txt"
- usage = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
+	generate         bool
+	findPassword     bool
+	passwordFilename = "darkweb2017-top10000.txt"
+	usage            = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
 )
 
 type row struct {
@@ -50,7 +50,6 @@ func hashString(s string) string {
 
 func reduction(h string) string {
 	//input_bytes := []byte(h)
-
 
 	return h
 }
@@ -148,7 +147,7 @@ func find(hash string) string {
 		numberOfIter++
 	}
 
-	for i := 0; i < width - numberOfIter - 1; i++ {
+	for i := 0; i < width-numberOfIter-1; i++ {
 		startWord = hashString(startWord)
 		startWord = reduction(startWord)
 	}
@@ -158,7 +157,7 @@ func find(hash string) string {
 func init() {
 
 	flag.BoolVar(&generate, "generate", false, usage)
-	flag.BoolVar(&generate, "g", false, usage + " (shorthand)")
+	flag.BoolVar(&generate, "g", false, usage+" (shorthand)")
 	flag.BoolVar(&findPassword, "f", false, "<HASH> - Find password for given <HASH>")
 }
 
