@@ -15,6 +15,7 @@ import (
 	"time"
 	"flag"
 	"bufio"
+	"math/rand"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 
 	wg sync.WaitGroup
 
-	width = 1000
+	width = 100
 
 	rows = make(chan row)
 
@@ -37,7 +38,12 @@ var (
 	passwordFilename = "darkweb2017-top10000.txt"
 	usage            = "<FILENAME> - Generate rainbowtable with <FILENAME> as starting vectors for rows. Default FILENAME = " + passwordFilename
 
-	defaultPassLength = 8
+	defaultPassMinLength = 6
+	defaultPassMaxLength = 12
+	defaultLower = "abcdefghijklmnopqrstuvwxyz"
+	defaultUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	defaultNumbers = "0123456789"
+	passwordCharacters = defaultUpper + defaultLower + defaultNumbers
 )
 
 type row struct {
@@ -50,15 +56,24 @@ func hashString(s string) string {
 	return hex.EncodeToString(h[:])
 }
 
+func random(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max - min) + min
+}
+
 func reduction(h string, columnNumber int) string {
 	inputBytes := []byte(h)
-
-	for i := 0; i < defaultPassLength; i++ {
-		iHaveNotIdeaWhatIAmDoing := inputBytes[(i + columnNumber) % len(inputBytes)]
-		print(iHaveNotIdeaWhatIAmDoing)
+	newPass := ""
+	for i := 0; i < random(defaultPassMinLength, defaultPassMaxLength); i++ {
+		randomIndex := inputBytes[(i + columnNumber) % len(inputBytes)]
+		generatedChar := passwordCharacters[int(randomIndex) % len(passwordCharacters)]
+		newPass += string(generatedChar)
+		//newPass.WriteByte(generatedChar)
 	}
+	println(columnNumber)
+	println(string(columnNumber) + ":   " + newPass)
 
-	return h
+	return newPass
 }
 
 //Have to end with empty line
