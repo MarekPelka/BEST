@@ -167,11 +167,15 @@ func find(hash string) string {
 				hash = hashString(hash)
 			}
 			numberOfIter++
+			r = selectFromTable(hash)
+			if r != "" {
+				startWord = r
+				break
+			}
 		}
-		r = selectFromTable(hash)
 	}
 
-	for i := 0; i < width - numberOfIter - 1; i++ {
+	for i := 0; i < width - numberOfIter ; i++ {
 		startWord = hashString(startWord)
 		startWord = reduction(startWord, i)
 	}
