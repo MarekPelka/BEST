@@ -1,21 +1,22 @@
 package main
 
 import (
-	_ "github.com/denisenkom/go-mssqldb"
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
-	"flag"
-	"bufio"
-	"math/rand"
+
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 var (
@@ -40,10 +41,10 @@ var (
 
 	defaultPassMinLength = 6
 	defaultPassMaxLength = 12
-	defaultLower = "abcdefghijklmnopqrstuvwxyz"
-	defaultUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	defaultNumbers = "0123456789"
-	passwordCharacters = defaultUpper + defaultLower + defaultNumbers
+	defaultLower         = "abcdefghijklmnopqrstuvwxyz"
+	defaultUpper         = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	defaultNumbers       = "0123456789"
+	passwordCharacters   = defaultUpper + defaultLower + defaultNumbers
 )
 
 type row struct {
@@ -58,22 +59,21 @@ func hashString(s string) string {
 
 func random(min, max int) int {
 	rand.Seed(time.Now().Unix())
-	return rand.Intn(max - min) + min
+	return rand.Intn(max-min) + min
 }
 
 func reduction(h string, columnNumber int) string {
 	inputBytes := []byte(h)
 	newPass := ""
 	for i := 0; i < random(defaultPassMinLength, defaultPassMaxLength); i++ {
-		randomIndex := inputBytes[(i + columnNumber) % len(inputBytes)]
-		generatedChar := passwordCharacters[int(randomIndex) % len(passwordCharacters)]
+		randomIndex := inputBytes[(i+columnNumber)%len(inputBytes)]
+		generatedChar := passwordCharacters[int(randomIndex)%len(passwordCharacters)]
 		newPass += string(generatedChar)
 		//newPass.WriteByte(generatedChar)
 	}
-	println(columnNumber)
-	println(string(columnNumber) + ":   " + newPass)
+	fmt.Printf("%d: %s\n", columnNumber, newPass)
 
-	return newPass
+	return h
 }
 
 //Have to end with empty line
@@ -156,20 +156,22 @@ func find(hash string) string {
 
 	var startWord string
 	numberOfIter := 0
-	for numberOfIter < width {
-		r := selectFromTable(hash)
 
-		if r != "" {
-			startWord = r
-			break
+	r := selectFromTable(hash)
+	if r != "" {
+		startWord = r
+	} else {
+		for bet_on_column := width - 1; bet_on_column > 0; bet_on_column -- {
+			for iter_column := bet_on_column; iter_column < width; iter_column ++ {
+				hash = reduction(hash, iter_column)
+				hash = hashString(hash)
+			}
+			numberOfIter++
 		}
-		hash = reduction(hash, numberOfIter)
-		hash = hashString(hash)
-
-		numberOfIter++
+		r = selectFromTable(hash)
 	}
 
-	for i := 0; i < width-numberOfIter-1; i++ {
+	for i := 0; i < width - numberOfIter - 1; i++ {
 		startWord = hashString(startWord)
 		startWord = reduction(startWord, i)
 	}
