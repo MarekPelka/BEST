@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -62,18 +63,45 @@ func random(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-func reduction(h string, columnNumber int) string {
-	inputBytes := []byte(h)
-	newPass := ""
-	for i := 0; i < random(defaultPassMinLength, defaultPassMaxLength); i++ {
-		randomIndex := inputBytes[(i+columnNumber)%len(inputBytes)]
-		generatedChar := passwordCharacters[int(randomIndex)%len(passwordCharacters)]
-		newPass += string(generatedChar)
-		//newPass.WriteByte(generatedChar)
+func Pow(a, b int) int {
+	p := 1
+	for b > 0 {
+		if b&1 != 0 {
+			p *= a
+		}
+		b >>= 1
+		a *= a
 	}
-	fmt.Printf("%d: %s\n", columnNumber, newPass)
+	return p
+}
 
-	return h
+func reduction(hash string, columnNumber int) string {
+	// it generated random number 1-15 xD
+	preety_random_hex := hash[0:1]
+	preety_random_number, _ := strconv.ParseInt("0x"+preety_random_hex, 0, 8)
+	passLength := int(preety_random_number)
+	// Lets make better range, for example 6-10, number estimate wil be preety the same ?
+	if passLength < 6 {
+		passLength = passLength + 5
+	} else if passLength > 10 {
+		passLength = passLength - 5
+	}
+	// random numbers in 1-15 range
+	random_numbers := make([]int, passLength)
+	for i := 0; i < passLength; i++ {
+		tmp_int64, _ := strconv.ParseInt("0x"+hash[i:i+1], 0, 8)
+		random_numbers[i] = int(tmp_int64)
+	}
+
+	newPass := ""
+	for i := 0; i < passLength; i++ {
+		// Select from passwordcharacters index dependent on column
+		// lets modulo columnNumber to not exceed int length and write something bad on memory (square of 2mld)
+		randomChar := passwordCharacters[(Pow(random_numbers[i], 3)+Pow(columnNumber%200, 3))%len(passwordCharacters)]
+		newPass += string(randomChar)
+	}
+	// fmt.Printf("\nReduction %s -> %s\n", h, newPass)
+	return newPass
 }
 
 //Have to end with empty line
@@ -108,7 +136,7 @@ func appendToTable(r row) {
 		log.Fatal("Error pinging database: " + err.Error())
 	}
 
-	tsql := fmt.Sprintf("INSERT INTO RainbowSchema.rainbow (HASH, WORD) VALUES (@Hash, @Word);")
+	tsql := fmt.Sprintf("UPDATE RainbowSchema.rainbow SET WORD=@Word WHERE HASH=@Hash; IF @@ROWCOUNT = 0 INSERT INTO RainbowSchema.rainbow (HASH, WORD) VALUES (@Hash, @Word);")
 
 	_, err = db.ExecContext(
 		ctx,
@@ -152,22 +180,37 @@ func selectFromTable(hash string) string {
 	return word
 }
 
+func iter_to_the_last_hash(start_column int, start_hash string) string {
+	hash := start_hash
+	//fmt.Printf("Iterating over %d -> %d\n", start_column, width-1)
+	for iter_column := start_column; iter_column < width-1; iter_column++ {
+		reducted_iter := reduction(hash, iter_column)
+		hash = hashString(reducted_iter)
+		//fmt.Printf("%d:Hashing %s -> %s\n", iter_column, reducted_iter, hash)
+		//fmt.Printf("hash %s, ", hash)
+	}
+
+	return hash
+}
+
 func find(hash string) string {
 
-	var startWord string
 	numberOfIter := 0
-
+	startWord := ""
 	r := selectFromTable(hash)
+
 	if r != "" {
 		startWord = r
 	} else {
-		for bet_on_column := width - 1; bet_on_column > 0; bet_on_column -- {
-			for iter_column := bet_on_column; iter_column < width; iter_column ++ {
-				hash = reduction(hash, iter_column)
-				hash = hashString(hash)
-			}
+		first_hash := hash
+		for bet_on_column := width - 2; bet_on_column >= 0; bet_on_column-- {
+			hash = first_hash
+			//fmt.Printf("\n\n\nBetting on %d\n", bet_on_column)
+			//fmt.Printf("Hashing:%s\n", hash)
+			hash = iter_to_the_last_hash(bet_on_column, hash)
 			numberOfIter++
 			r = selectFromTable(hash)
+
 			if r != "" {
 				startWord = r
 				break
@@ -175,7 +218,8 @@ func find(hash string) string {
 		}
 	}
 
-	for i := 0; i < width - numberOfIter ; i++ {
+	for i := 0; i < width-numberOfIter-1; i++ {
+		//fmt.Printf("\nStarting word: %s", startWord)
 		startWord = hashString(startWord)
 		startWord = reduction(startWord, i)
 	}
