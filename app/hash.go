@@ -100,7 +100,7 @@ func reduction(hash string, columnNumber int) string {
 		randomChar := passwordCharacters[(Pow(random_numbers[i], 3)+Pow(columnNumber%200, 3))%len(passwordCharacters)]
 		newPass += string(randomChar)
 	}
-	// fmt.Printf("\nReduction %s -> %s\n", h, newPass)
+	fmt.Printf("\nReduction %s -> %s\n", hash, newPass)
 	return newPass
 }
 
@@ -205,21 +205,23 @@ func find(hash string) string {
 		first_hash := hash
 		for bet_on_column := width - 2; bet_on_column >= 0; bet_on_column-- {
 			hash = first_hash
-			//fmt.Printf("\n\n\nBetting on %d\n", bet_on_column)
+			fmt.Printf("\n\n\nBetting on %d\n", bet_on_column)
 			//fmt.Printf("Hashing:%s\n", hash)
 			hash = iter_to_the_last_hash(bet_on_column, hash)
-			numberOfIter++
 			r = selectFromTable(hash)
 
 			if r != "" {
+				numberOfIter = bet_on_column
+				fmt.Printf("\nFoud in db %s -> %s\n", hash, r)
 				startWord = r
 				break
 			}
 		}
 	}
 
-	for i := 0; i < width-numberOfIter-1; i++ {
-		//fmt.Printf("\nStarting word: %s", startWord)
+	for i := 0; i < numberOfIter; i++ {
+
+		fmt.Printf("\n%d Starting word: %s", i, startWord)
 		startWord = hashString(startWord)
 		startWord = reduction(startWord, i)
 	}
